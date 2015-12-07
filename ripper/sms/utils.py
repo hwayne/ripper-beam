@@ -1,6 +1,5 @@
 import shlex
 from re import sub
-#from sms.env import MY_NAME, MY_NUMBER
 
 def clean_number(number):
     return sub("\D", "", number)

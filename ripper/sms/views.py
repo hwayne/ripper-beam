@@ -1,29 +1,31 @@
-from django.shortcuts import render
-
-from sms.utils import parse_message, clean_number
-from django.http import HttpResponse
 from django_twilio.decorators import twilio_view
-from django_twilio.client import twilio_client
+from .utils import parse_message, clean_number
+from forwarder.forward import forward
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponse
+from os import environ
 
-#@twilio_view
+xml = lambda x: "<Response><Message>{}</Message></Response>".format(x)
+FAIL_INVALID_NUMBER = xml("This is not an authorized number.") # Twilio weirdness
+FAIL_BAD_ROUTE = xml("No matching route found.") # Twilio weirdness
+
+@twilio_view
 def index(request):
     from_number = clean_number(request.POST.get('From', '0'))
     message = request.POST.get('Body', '')
     return getsms(from_number, message)
 
 def getsms(from_number, message):
-    if from_number == '12487943292':
-        route = parse_message(message)
-        route_function = ROUTES[route['route']]
-        response = route_function(*route['args'])
+    if from_number == environ['MY_NUMBER']:
+        command = parse_message(message)
+        return process_command(command)
     else:
-        response = ROUTES['outside'](from_number, message)
-    if isinstance(response, dict) or isinstance(response, str):
-        return sendsms(response)
-    return HttpResponse("Complete.")
+        return HttpResponse(FAIL_INVALID_NUMBER, content_type = 'text/xml')
 
-
-def sendsms(messages):
-    if isinstance(messages, str):
-        messages = { MY_NUMBER: messages }
-    return HttpResponse('Sent.')
+def process_command(command):
+    try:
+        status = forward(command['command'], *command['args'])
+        response = xml("Command returned {}.".format(status))
+    except ObjectDoesNotExist:
+        response = FAIL_BAD_ROUTE
+    return HttpResponse(response, content_type = 'text/xml')

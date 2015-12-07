@@ -12,4 +12,5 @@ def post(model, *args, **kwargs):
     url = model.url
     auth = HTTPDigestAuth(model.auth_username, model.auth_password)
     payload = {'args': args}
-    return requests_post(url, data=payload, auth=auth)
+    response = requests_post(url, data=payload, auth=auth)
+    return response.status_code

@@ -16,8 +16,9 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
+from sms import urls as sms_urls
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^sms/', admin.site.urls),
+    url(r'^sms/', include(sms_urls)),
 ]

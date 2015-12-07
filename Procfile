@@ -1,2 +1,2 @@
-web: gunicorn ripper.wsgi --log-file -
+web: gunicorn --pythonpath ripper ripper.wsgi --log-file -
 
